@@ -104,6 +104,7 @@ Class Switcher extends Gui {
 		this.List := []
 		this.LV.Delete()
 		WinGet windows, List
+		Added := []
 		Loop %windows%
 		{
 			ID := windows%A_Index%
@@ -113,7 +114,7 @@ Class Switcher extends Gui {
 			WinGet, ProcessName, ProcessName, % "ahk_id" ID
 			ProcessName := StrSplit(ProcessName, ".").1
 			WinGet, Exe, ProcessPath, % "ahk_id" ID
-			if StrLen(Exe) && StrLen(Title) && !(Title ~= IgnoreEquals) {
+			if StrLen(Exe) && StrLen(Title) && !(Title ~= IgnoreEquals) && (!Added.HasKey(Title)) {
 				if !this.Icons.HasKey(Exe)
 					Icon := this.Icons[Exe] := this.IL.Add(Exe)
 				else
@@ -121,6 +122,7 @@ Class Switcher extends Gui {
 				if !Icon
 					continue
 				this.List.Push({Title:Title, Exe:Exe, hwnd:ID, Search:(Title " " ProcessName)})
+				Added[Title] := true
 				this.LV.Add("Icon" Icon, Title, ID)
 			}
 		} this.SizeCtrl()
