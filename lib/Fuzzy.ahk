@@ -12,7 +12,7 @@ Fuzzy(input, arr, att) {
 	{
 		arrDst[ &val ] := LDistance( Format( "{:l}", input ), Format( "{:l}", val[ att ] ) )
 		dist := Round( LDRel( input, val[ att ], arrDst[ &val ] ) * 1000 )
-		if ( dist > 500 )
+		if ( dist > 100 )
 			continue
 		if !( arrSrt.hasKey( dist ) )
 			arrSrt[ dist ] := [ val ]
