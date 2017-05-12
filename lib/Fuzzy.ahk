@@ -30,7 +30,7 @@ Fuzzy(input, arr, att) {
 		grpSrt:={}
 		For each, val in group
 		{
-			dist := Round( ( LDPercent( input, val[ att ], arrDst[ &val ] ) + arrDst[ &val ].2 ) * 1000 )
+			dist := Round( ( LDPercent( input, val[ att ], arrDst[ &val ].1 ) + arrDst[ &val ].2 ) * 1000 )
 			if !( grpSrt.hasKey( dist ) )
 				grpSrt[ dist ] := [ val ]
 			else
