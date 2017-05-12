@@ -15,7 +15,9 @@ Color := "404040"
 SelColor := "44C6F6"
 ; === END CONFIGURATION ===
 
-global Key, EscapeExit, Width, Height, MaxItems, Color, MoveUp, LargeIcons, FontSize
+IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager)$"
+
+global Key, EscapeExit, Width, Height, MaxItems, Color, MoveUp, LargeIcons, FontSize, IgnoreEquals
 
 ; set up gui
 Switcher := new Switcher("Window Switcher", "-Caption +Border +ToolWindow")
@@ -23,7 +25,7 @@ Switcher.Margin(0, 0)
 Switcher.Color(Color, Color)
 Switcher.Font("s10 cWhite")
 Switcher.Edit := Switcher.Add("Edit", "w" Width " h26",, Switcher.Input.Bind(Switcher))
-Switcher.LV := new Gui.ListView(Switcher, "x0 y26 w" Width " h100  -HDR -Multi +LV0x4000 -E0x200 AltSubmit -TabStop", "title|exe")
+Switcher.LV := new Gui.ListView(Switcher, "x0 y26 w" Width " h100  -HDR -Multi +LV0x4000 -E0x200 AltSubmit -TabStop", "title|exe", Switcher.ListViewAction.Bind(Switcher))
 Switcher.CLV := new LV_Colors(Switcher.LV.hwnd)
 Switcher.CLV.SelectionColors("0x" SelColor, "0xFFFFFF")
 Switcher.IL := new Gui.ImageList(,, LargeIcons)
@@ -34,12 +36,13 @@ Switcher.Icons := []
 ; bind hotkeys
 new Hotkey(Key, Switcher.Toggle.Bind(Switcher))
 new Hotkey("Enter", Switcher.Go.Bind(Switcher), Switcher.ahkid)
-new Hotkey("Up", Switcher.Up.Bind(Switcher), Switcher.ahkid)
-new Hotkey("Down", Switcher.Down.Bind(Switcher), Switcher.ahkid)
+new Hotkey("Delete", Switcher.Stop.Bind(Switcher), Switcher.ahkid)
+new Hotkey("Up", Switcher.Move.Bind(Switcher, -1), Switcher.ahkid)
+new Hotkey("Down", Switcher.Move.Bind(Switcher, +1), Switcher.ahkid)
 new Hotkey("^Backspace", Switcher.CtrlBackspace.Bind(Switcher), Switcher.ahkid)
+
 if EscapeExit
 	new Hotkey("Escape", Switcher.Close.Bind(Switcher), Switcher.ahkid)
-
 return
 
 Class Switcher extends Gui {
@@ -47,11 +50,14 @@ Class Switcher extends Gui {
 	Input(x*) {
 		GuiControlGet, text,, % this.Edit
 		this.LV.Delete()
-		
 		for Index, Info in Fuzzy(text, this.List, "Search") ; search over this.list with the needle text, in the attribute Title
 			this.LV.Add("Icon" this.Icons[Info.Exe], Info.Title, Info.hwnd)
-		
-		this.Size()
+		this.SizeCtrl()
+	}
+	
+	ListViewAction(x*) {
+		if (x.2 = "DoubleClick")
+			this.Go()
 	}
 	
 	Go() {
@@ -61,19 +67,21 @@ Class Switcher extends Gui {
 		WinActivate % "ahk_id" ID
 	}
 	
-	Up() {
+	Stop() {
 		Selected := this.LV.GetNext()
-		Count := this.LV.GetCount()
-		if (Selected != 1) && !(Selected >= Count)
-			this.LV.Modify(Selected-1, "Select Vis")
-		this.Control("Focus", this.Edit)
+		ID := this.LV.GetText(Selected, 2)
+		this.LV.Delete(Selected)
+		this.SizeCtrl(Selected)
+		WinClose % "ahk_id" id
 	}
 	
-	Down() {
+	Move(Dir) {
 		Selected := this.LV.GetNext()
 		Count := this.LV.GetCount()
-		if (Selected < Count)
-			this.LV.Modify(Selected+1, "Select Vis")
+		New := Selected + Dir
+		if (New < 1) || (New > Count)
+			return
+		this.LV.Modify(New, "Select Vis")
 		this.Control("Focus", this.Edit)
 	}
 	
@@ -92,34 +100,34 @@ Class Switcher extends Gui {
 			WinGet, ProcessName, ProcessName, % "ahk_id" ID
 			ProcessName := StrSplit(ProcessName, ".").1
 			WinGet, Exe, ProcessPath, % "ahk_id" ID
-			if StrLen(Exe) && StrLen(Title) {
+			if StrLen(Exe) && StrLen(Title) && !(Title ~= IgnoreEquals) {
 				if !this.Icons.HasKey(Exe)
 					Icon := this.Icons[Exe] := this.IL.Add(Exe)
 				else
 					Icon := this.Icons[Exe]
 				if !Icon
 					continue
-				this.List.Push({Title:Title, Exe:Exe, hwnd:ID, Search:(Title . ProcessName)})
+				this.List.Push({Title:Title, Exe:Exe, hwnd:ID, Search:(Title " " ProcessName)})
 				this.LV.Add("Icon" Icon, Title, ID)
 			}
-		} this.Size()
+		} this.SizeCtrl()
 		this.Animate("FADE_IN", 50)
 		this.Show()
 		this.Control("Focus", this.Edit)
 	}
 	
-	Size() {
+	SizeCtrl(Pos := 1) {
 		static VERT_SCROLL, ROW_HEIGHT
 		if !VERT_SCROLL
 			SysGet, VERT_SCROLL, 2
 		if !ROW_HEIGHT
 			ROW_HEIGHT := LV_EX_GetRowHeight(this.LV.hwnd)
 		this.LV.Redraw(false)
-		GetCount := this.LV.GetCount()
-		this.LV.ModifyCol(1, Width - ((GetCount > MaxItems) ? VERT_SCROLL : 0))
-		this.Pos(A_ScreenWidth/2 - Width/2, A_ScreenHeight/2 - MoveUp,, 26 + (MaxItems > GetCount ? GetCount : MaxItems) * ROW_HEIGHT)
-		this.Control("Move", this.LV.hwnd, "h" (ROW_HEIGHT * (MaxItems > GetCount ? GetCount : MaxItems)))
-		this.LV.Modify(1, "Select Vis")
+		Count := this.LV.GetCount()
+		this.LV.ModifyCol(1, Width - ((Count > MaxItems) ? VERT_SCROLL : 0))
+		this.Pos(A_ScreenWidth/2 - Width/2, A_ScreenHeight/2 - MoveUp,, 26 + (MaxItems > Count ? Count : MaxItems) * ROW_HEIGHT)
+		this.Control("Move", this.LV.hwnd, "h" (ROW_HEIGHT * (MaxItems > Count ? Count : MaxItems)))
+		this.LV.Modify((Pos>Count?Count:Pos), "Select Vis")
 		this.LV.ModifyCol(2, 0)
 		this.LV.Redraw(true)
 	}

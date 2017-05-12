@@ -51,7 +51,7 @@
 		if (outline[item.id] = input)
 			arren.RemoveAt(index), arren.InsertAt(++i, item)
 	
-	for index, item in arren, i:=0 ; worst start and ONLY word
+	for index, item in arren, i:=0 ; word start and ONLY word
 		if (InStr(item[att], input) = 1) && !InStr(item[att], " ")
 			arren.RemoveAt(index), arren.InsertAt(++i, item)
 	
