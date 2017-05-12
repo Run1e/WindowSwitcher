@@ -1,43 +1,51 @@
 ﻿#Include %A_LineFile%\..\DamerauLevenshtein.ahk
 
-Fuzzy(input, arr, att) {
-	
+Fuzzy( input, arr, att )
+{
 	if !input
 		return arr
 	
-	arrDst:={}
-	arrSrt:={}
+	arr := arr.clone()
 	
+	srtGrp := [ [], [], [[]] ]
 	input := Format( "{:l}", input )
+	sQuery := subStr( input, 1, 1 )
 	
-	For each, val in arr
+	for each, val in arr
 	{
-		query := Format( "{:l}", val[ att ] )
-		arrDst[ &val ] := [ LDistance( input , query ), LDistance( input, subStr( query, inStr( query, subStr( input, 1, 1 ) ) ,strLen( input ) ) ) / strLen( input ) ]
-		if ( LDRel( input, val[ att ], arrDst[ &val ].1 ) > 0 )
+		if ( dist := inStr( query := Format( "{:l}", val[ att ] ), input ) )
+		{
+			if ( srtGrp.1.hasKey( dist ) )
+				srtGrp.1[ dist ].Push( val )
+			else
+				srtGrp.1[ dist ] := [ val ]
 			continue
-		dist := Round( ( LDRel( input, val[ att ], arrDst[ &val ].1 ) + arrDst[ &val ].2 ) * 1000 )
-		if !( arrSrt.hasKey( dist ) )
-			arrSrt[ dist ] := [ val ]
-		else
-			arrSrt[ dist ].Push( val )
+		}
+		
+		pos := 0
+		minDist := StrLen( input )
+		while ( pos := inStr( query, sQuery, 0, pos + 1 ) )
+			if ( minDist > ( dist := LDistance( SubStr( query, pos, StrLen( input ) ) , input ) ) )
+				minDist := dist
+		if ( minDist < strLen( input ) - 1 )
+		{
+			if ( srtGrp.2.hasKey( minDist ) )
+				srtGrp.2[ minDist ].Push( val )
+			else
+				srtGrp.2[ minDist ] := [ val ]
+			continue
+		}
+		
+		if ( LDRel( query, input ) = 0 )
+			srtGrp.3.1.Push( val )
 	}
+	
 	
 	arren := []
+	For each, mGroup in srtGrp
+		For dist, group in mGroup
+			For each, val in group
+				arren.Push( val )
 	
-	For each, group in arrSrt
-	{
-		grpSrt:={}
-		For each, val in group
-		{
-			dist := Round( ( LDPercent( input, val[ att ], arrDst[ &val ].1 ) + arrDst[ &val ].2 ) * 1000 )
-			if !( grpSrt.hasKey( dist ) )
-				grpSrt[ dist ] := [ val ]
-			else
-				grpSrt[ dist ].Push( val )
-		}
-		For each, val in grpSrt
-			arren.Push( val* )
-	}
 	return arren
 }
