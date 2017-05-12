@@ -14,9 +14,9 @@ Fuzzy(input, arr, att) {
 	{
 		query := Format( "{:l}", val[ att ] )
 		arrDst[ &val ] := [ LDistance( input , query ), LDistance( input, subStr( query, inStr( query, subStr( input, 1, 1 ) ) ,strLen( input ) ) ) / strLen( input ) ]
-		dist := Round( ( LDRel( input, val[ att ], arrDst[ &val ].1 ) + arrDst[ &val ].2 ) * 1000 )
-		if ( arrDst[ &val ].1 > 0 )
+		if ( LDRel( input, val[ att ], arrDst[ &val ].1 ) > 0 )
 			continue
+		dist := Round( ( LDRel( input, val[ att ], arrDst[ &val ].1 ) + arrDst[ &val ].2 ) * 1000 )
 		if !( arrSrt.hasKey( dist ) )
 			arrSrt[ dist ] := [ val ]
 		else
