@@ -22,22 +22,23 @@ Fuzzy( input, arr, att )
 			continue
 		}
 		
-		pos := 0
-		minDist := StrLen( input )
-		while ( pos := inStr( query, sQuery, 0, pos + 1 ) )
-			if ( minDist > ( dist := LDistance( SubStr( query, pos, StrLen( input ) ) , input ) ) )
-				minDist := dist
-		if ( minDist < strLen( input ) - 1 )
-		{
-			if ( srtGrp.2.hasKey( minDist ) )
-				srtGrp.2[ minDist ].Push( val )
-			else
-				srtGrp.2[ minDist ] := [ val ]
-			continue
-		}
-		
 		if ( LDRel( query, input ) = 0 )
-			srtGrp.3.1.Push( val )
+		{
+			pos := 0
+			minDist := StrLen( input )
+			while ( pos := inStr( query, sQuery, 0, pos + 1 ) )
+				if ( minDist > ( dist := LDistance( SubStr( query, pos, StrLen( input ) ) , input ) ) )
+					minDist := dist
+			if ( minDist < strLen( input ) - 1 )
+			{
+				if ( srtGrp.2.hasKey( minDist ) )
+					srtGrp.2[ minDist ].Push( val )
+				else
+					srtGrp.2[ minDist ] := [ val ]
+			}
+			else
+				srtGrp.3.1.Push( val )
+		}
 	}
 	
 	
