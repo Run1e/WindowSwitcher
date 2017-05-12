@@ -1,5 +1,7 @@
 ﻿#SingleInstance force
 #NoEnv
+#NoTrayIcon
+SetBatchLines -1
 DetectHiddenWindows Off
 
 ; === CONFIGURATION ===
@@ -50,6 +52,8 @@ Class Switcher extends Gui {
 	Input(x*) {
 		GuiControlGet, text,, % this.Edit
 		this.LV.Delete()
+		if (text = "exit")
+			this.LV.Add("Icon0", "Press Enter to Exit")
 		for Index, Info in Fuzzy(text, this.List, "Search") ; search over this.list with the needle text, in the attribute Title
 			this.LV.Add("Icon" this.Icons[Info.Exe], Info.Title, Info.hwnd)
 		this.SizeCtrl()
@@ -72,6 +76,9 @@ Class Switcher extends Gui {
 		ID := this.LV.GetText(Selected, 2)
 		this.LV.Delete(Selected)
 		this.SizeCtrl(Selected)
+		for Index, Thing in this.List
+			if (Thing.hwnd = ID)
+				this.List.Remove(Index)
 		WinClose % "ahk_id" id
 	}
 	
