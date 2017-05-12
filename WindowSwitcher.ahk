@@ -6,32 +6,31 @@ DetectHiddenWindows Off
 
 ; === CONFIGURATION ===
 Key := "^!I"
-EscapeExit := true
-Width := 400
-Height := 300
-FontSize := 10
-MaxItems := 10
+Width := 500
+MaxItems := 15
 LargeIcons := true
+CenterText := false
 MoveUp := 120
 Color := "404040"
 SelColor := "44C6F6"
+Prefix := "."
+AllowDupe := false
+FadeTime := 50
+IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager)$"
 ; === END CONFIGURATION ===
 
-IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager)$"
-
-global Key, EscapeExit, Width, Height, MaxItems, Color, MoveUp, LargeIcons, FontSize, IgnoreEquals
+global Key, Width, MaxItems, Color, MoveUp, LargeIcons, FontSize, IgnoreEquals, Prefix, AllowDupe, FadeTime
 
 ; set up gui
 Switcher := new Switcher("Window Switcher", "-Caption +Border +ToolWindow")
 Switcher.Margin(0, 0)
 Switcher.Color(Color, Color)
-Switcher.Font("s10 cWhite")
-Switcher.Edit := Switcher.Add("Edit", "w" Width " h26",, Switcher.Input.Bind(Switcher))
+Switcher.Font("s11 cWhite")
+Switcher.Edit := Switcher.Add("Edit", "w" Width " h26 -Border -Multi " (CenterText ? "Center" : ""),, Switcher.Input.Bind(Switcher))
 Switcher.LV := new Gui.ListView(Switcher, "x0 y26 w" Width " h100  -HDR -Multi +LV0x4000 -E0x200 AltSubmit -TabStop", "title|exe", Switcher.ListViewAction.Bind(Switcher))
 Switcher.CLV := new LV_Colors(Switcher.LV.hwnd)
 Switcher.CLV.SelectionColors("0x" SelColor, "0xFFFFFF")
 Switcher.IL := new Gui.ImageList(,, LargeIcons)
-
 Switcher.LV.SetImageList(Switcher.IL.ID)
 Switcher.Icons := []
 
@@ -42,18 +41,18 @@ new Hotkey("Delete", Switcher.Stop.Bind(Switcher), Switcher.ahkid)
 new Hotkey("Up", Switcher.Move.Bind(Switcher, -1), Switcher.ahkid)
 new Hotkey("Down", Switcher.Move.Bind(Switcher, +1), Switcher.ahkid)
 new Hotkey("^Backspace", Switcher.CtrlBackspace.Bind(Switcher), Switcher.ahkid)
-
-if EscapeExit
-	new Hotkey("Escape", Switcher.Close.Bind(Switcher), Switcher.ahkid)
 return
 
 Class Switcher extends Gui {
-	
 	Input(x*) {
 		GuiControlGet, text,, % this.Edit
 		this.LV.Delete()
-		if (text = "exit")
-			this.LV.Add("Icon0", "Press Enter to Exit")
+		if (SubStr(text, 1, 1) = Prefix) {
+			this.LV.Add("Icon0", "Reload", "COMMAND")
+			this.LV.Add("Icon0", "Exit", "COMMAND")
+			this.SizeCtrl()
+			return
+		}
 		for Index, Info in Fuzzy(text, this.List, "Search") ; search over this.list with the needle text, in the attribute Title
 			this.LV.Add("Icon" this.Icons[Info.Exe], Info.Title, Info.hwnd)
 		this.SizeCtrl()
@@ -67,6 +66,12 @@ Class Switcher extends Gui {
 	Go() {
 		Selected := this.LV.GetNext()
 		ID := this.LV.GetText(Selected, 2)
+		if (ID = "COMMAND") {
+			text := this.LV.GetText(Selected, 1)
+			Command(text)
+			this.Close()
+			return
+		}
 		this.Close()
 		WinActivate % "ahk_id" ID
 	}
@@ -76,10 +81,11 @@ Class Switcher extends Gui {
 		ID := this.LV.GetText(Selected, 2)
 		this.LV.Delete(Selected)
 		this.SizeCtrl(Selected)
-		for Index, Thing in this.List
-			if (Thing.hwnd = ID)
+		for Index, Thing in this.List {
+			if (Thing.hwnd = ID) {
 				this.List.Remove(Index)
-		WinClose % "ahk_id" id
+				break
+		}} WinClose % "ahk_id" id
 	}
 	
 	Move(Dir) {
@@ -118,7 +124,8 @@ Class Switcher extends Gui {
 				this.LV.Add("Icon" Icon, Title, ID)
 			}
 		} this.SizeCtrl()
-		this.Animate("FADE_IN", 50)
+		this.Show("Hide") ; "activate"
+		this.Animate("FADE_IN", FadeTime)
 		this.Show()
 		this.Control("Focus", this.Edit)
 	}
@@ -155,6 +162,17 @@ Class Switcher extends Gui {
 		ControlSend, Edit1, ^+{Left}{Backspace}, % this.ahkid
 		this.Control("+Redraw", "Edit1")
 	}
+	
+	Escape() {
+		this.Close()
+	}
+}
+
+Command(cmd) {
+	if (cmd = "reload")
+		reload
+	if (cmd = "Exit")
+		ExitApp
 }
 
 pa(array, depth=5, indentLevel:="   ") { ; tidbit, this has saved my life
