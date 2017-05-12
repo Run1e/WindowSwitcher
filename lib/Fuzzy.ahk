@@ -8,11 +8,14 @@ Fuzzy(input, arr, att) {
 	arrDst:={}
 	arrSrt:={}
 	
+	input := Format( "{:l}", input )
+	
 	For each, val in arr
 	{
-		arrDst[ &val ] := LDistance( Format( "{:l}", input ), Format( "{:l}", val[ att ] ) )
-		dist := Round( LDRel( input, val[ att ], arrDst[ &val ] ) * 1000 )
-		if ( dist > 100 )
+		query := Format( "{:l}", val[ att ] )
+		arrDst[ &val ] := [ LDistance( input , query ), LDistance( input, subStr( query, inStr( query, subStr( input, 1, 1 ) ) ,strLen( input ) ) ) / strLen( input ) ]
+		dist := Round( ( LDRel( input, val[ att ], arrDst[ &val ].1 ) + arrDst[ &val ].2 ) * 1000 )
+		if ( dist > 150 )
 			continue
 		if !( arrSrt.hasKey( dist ) )
 			arrSrt[ dist ] := [ val ]
@@ -27,7 +30,7 @@ Fuzzy(input, arr, att) {
 		grpSrt:={}
 		For each, val in group
 		{
-			dist := Round( LDPercent( input, val[ att ], arrDst[ &val ] ) * 1000 )
+			dist := Round( ( LDPercent( input, val[ att ], arrDst[ &val ] ) + arrDst[ &val ].2 ) * 1000 )
 			if !( grpSrt.hasKey( dist ) )
 				grpSrt[ dist ] := [ val ]
 			else
