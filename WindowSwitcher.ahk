@@ -16,7 +16,7 @@ SelColor := "44C6F6"
 Prefix := "."
 AllowDupe := false
 FadeTime := 50
-IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager)$"
+IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager|Settings)$"
 ; === END CONFIGURATION ===
 
 global Key, Width, MaxItems, Color, MoveUp, LargeIcons, FontSize, IgnoreEquals, Prefix, AllowDupe, FadeTime
