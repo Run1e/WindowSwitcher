@@ -1,6 +1,8 @@
-# Window Switcher
+# WindowSwitcher
 
 Binds (by default) to `CTRL+ALT+I` and allows you to enter data to open a specific window on your desktop.
+
+![Example of WindowSwitcher popup window](example.png)
 
 ##  How to use
 
