@@ -14,7 +14,7 @@ MoveUp := 120
 Color := "404040"
 SelColor := "44C6F6"
 Prefix := "."
-AllowDupe := false
+AllowDupe := true
 FadeTime := 50
 IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager|Settings)$"
 ; === END CONFIGURATION ===
@@ -22,12 +22,12 @@ IgnoreEquals := "^(NVIDIA GeForce Overlay|Program Manager|Settings)$"
 global Key, Width, MaxItems, Color, MoveUp, LargeIcons, FontSize, IgnoreEquals, Prefix, AllowDupe, FadeTime
 
 ; set up gui
-Switcher := new Switcher("Window Switcher", "-Caption +Border +ToolWindow")
+Switcher := new Switcher("Window Switcher", "+ToolWindow -Caption +Border") ; removed ToolWindow to make RegisterWindowMessage work with this hwnd
 Switcher.Margin(0, 0)
 Switcher.Color(Color, Color)
 Switcher.Font("s11 cWhite")
 Switcher.Edit := Switcher.Add("Edit", "w" Width " h26 -Border -Multi " (CenterText ? "Center" : ""),, Switcher.Input.Bind(Switcher))
-Switcher.LV := new Gui.ListView(Switcher, "x0 y26 w" Width " h100  -HDR -Multi +LV0x4000 -E0x200 AltSubmit -TabStop", "title|exe", Switcher.ListViewAction.Bind(Switcher))
+Switcher.LV := new Gui.ListView(Switcher, "x0 y26 w" Width " h100  -HDR -Multi +LV0x10000 +LV0x4000 -E0x200 AltSubmit -TabStop", "title|exe", Switcher.ListViewAction.Bind(Switcher))
 Switcher.CLV := new LV_Colors(Switcher.LV.hwnd)
 Switcher.CLV.SelectionColors("0x" SelColor, "0xFFFFFF")
 Switcher.IL := new Gui.ImageList(,, LargeIcons)
@@ -41,7 +41,20 @@ new Hotkey("Delete", Switcher.Stop.Bind(Switcher), Switcher.ahkid)
 new Hotkey("Up", Switcher.Move.Bind(Switcher, -1), Switcher.ahkid)
 new Hotkey("Down", Switcher.Move.Bind(Switcher, +1), Switcher.ahkid)
 new Hotkey("^Backspace", Switcher.CtrlBackspace.Bind(Switcher), Switcher.ahkid)
+
+DllCall("RegisterShellHookWindow", "ptr", Switcher.hwnd)
+OnMessage(DllCall("RegisterWindowMessage", "Str", "SHELLHOOK"), Func("RegisterWindowMessage"))
 return
+
+RegisterWindowMessage(wParam, hwnd) {
+	if (wParam == 4 || wParam == 32772) {
+		if (Switcher.IsVisible) {
+			hwnd := WinActive()
+			if (hwnd != Switcher.hwnd)
+				Switcher.Close()
+		}
+	}
+}
 
 Class Switcher extends Gui {
 	Input(x*) {
@@ -72,7 +85,7 @@ Class Switcher extends Gui {
 			this.Close()
 			return
 		}
-		this.Close()
+		;this.Close()
 		WinActivate % "ahk_id" ID
 	}
 	
@@ -122,7 +135,8 @@ Class Switcher extends Gui {
 				if !Icon
 					continue
 				this.List.Push({Title:Title, Exe:Exe, hwnd:ID, Search:(Title " " ProcessName)})
-				Added[Title] := true
+				if !AllowDupe
+					Added[Title] := true
 				this.LV.Add("Icon" Icon, Title, ID)
 			}
 		} this.SizeCtrl()
@@ -186,7 +200,7 @@ pa(array, depth=5, indentLevel:="   ") { ; tidbit, this has saved my life
 			else
 				lst.=" => " v
 			lst.="`n"
-		} return rtrim(lst, "`r`n `t")	
+		} return rtrim(lst, "`r`n `t")
 	} return
 }
 
